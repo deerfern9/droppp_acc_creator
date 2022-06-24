@@ -153,7 +153,7 @@ def main():
             code = get_code_from_rambler(mail, password)
         except TimeoutError:
             print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
-        except imaplib.error:
+        except:
             print(Fore.RED, "[ERROR] Invalid login or password", Fore.RESET)
         enter_code(code, token, proxies, user_agent, mail)
         time.sleep(10)
