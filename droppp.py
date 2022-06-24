@@ -154,7 +154,7 @@ def main():
         except TimeoutError:
             print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
         except:
-            print(Fore.RED, "[ERROR] Invalid login or password", Fore.RESET)
+            print(Fore.RED, "[MAIL ERROR] Invalid login or password", Fore.RESET)
         enter_code(code, token, proxies, user_agent, mail)
         time.sleep(10)
         i += 1
