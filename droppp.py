@@ -43,7 +43,7 @@ def create_account(mail, password, proxies, user_agent):
     try:
         token = response["token"]['access_token']
     except KeyError:
-        print(Fore.BLUE, f"{mail}", Fore.RED, response["errors"], Fore.RESET)
+        print(Fore.BLUE, f"[ERROR {mail}]", Fore.RED, response["errors"], Fore.RESET)
         if response["errors"] == {'generic': 'Too many requests'}:
             token = "proxies"
         else:
@@ -138,7 +138,7 @@ def main():
         try:
             token = create_account(mail, password, proxies, user_agent)
         except requests.exceptions.JSONDecodeError:
-            print(Fore.RED, "requests.exceptions.JSONDecodeError", Fore.RESET)
+            print(Fore.RED, "[ERROR] requests.exceptions.JSONDecodeError", Fore.RESET)
             token = "proxies"
         if token == "continue":
             continue
@@ -152,7 +152,9 @@ def main():
         try:
             code = get_code_from_rambler(mail, password)
         except TimeoutError:
-            print("Something wrong with email")
+            print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
+        except imaplib.error:
+            print(Fore.RED, "[ERROR] Invalid login or password", Fore.RESET)
         enter_code(code, token, proxies, user_agent, mail)
         time.sleep(10)
         i += 1
