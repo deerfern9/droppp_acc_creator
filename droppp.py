@@ -137,8 +137,8 @@ def main():
         user_agent = random_useragent()
         try:
             token = create_account(mail, password, proxies, user_agent)
-        except requests.exceptions.JSONDecodeError:
-            print(Fore.RED, "[ERROR] requests.exceptions.JSONDecodeError", Fore.RESET)
+        except:
+            print(Fore.RED, "[ERROR] requests error", Fore.RESET)
             token = "proxies"
         if token == "continue":
             continue
@@ -151,10 +151,8 @@ def main():
         time.sleep(10)
         try:
             code = get_code_from_rambler(mail, password)
-        except TimeoutError:
-            print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
         except:
-            print(Fore.RED, "[MAIL ERROR] Invalid login or password", Fore.RESET)
+            print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
         enter_code(code, token, proxies, user_agent, mail)
         time.sleep(10)
         i += 1
