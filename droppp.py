@@ -122,29 +122,33 @@ def main():
     i = 0
     j = 0
     for mail, password in mails.items():
+        user_agent = random_useragent()
         if i == 2:
             print(Fore.BLUE, "[INFO] Proxy changed", Fore.RESET)
             j += 1
             i = 0
-        try:
-            proxies = {'http': 'http://' + proxy[j].replace("\n", ''), 'https': 'http://' + proxy[j].replace('\n', '')}
-        except IndexError:
-            print(Fore.BLUE, "[INFO] More accounts than proxies", Fore.RESET)
-            print(Fore.BLUE, "[INFO] Registration is over", Fore.RESET)
-            print(Fore.BLUE, "[INFO] Last mail:", Fore.GREEN, mail, Fore.RESET)
-            time.sleep(60*60)
-            break
-        user_agent = random_useragent()
-        try:
-            token = create_account(mail, password, proxies, user_agent)
-        except:
-            print(Fore.RED, "[ERROR] requests error", Fore.RESET)
-            token = "proxies"
+        while True:
+            try:
+                proxies = {'http': 'http://' + proxy[j].replace("\n", ''), 'https': 'http://' + proxy[j].replace('\n', '')}
+            except IndexError:
+                print(Fore.BLUE, "[INFO] More accounts than proxies", Fore.RESET)
+                print(Fore.BLUE, "[INFO] Registration is over", Fore.RESET)
+                print(Fore.BLUE, "[INFO] Last mail:", Fore.GREEN, mail, Fore.RESET)
+                time.sleep(60*60)
+                break
+            try:
+                token = create_account(mail, password, proxies, user_agent)
+            except:
+                print(Fore.RED, "[ERROR] requests error", Fore.RESET)
+                token = "proxies"
+            if token == "continue":
+                break
+            elif token == "proxies":
+                j += 1
+                continue
         if token == "continue":
             continue
-        elif token == "proxies":
-            i = 2
-            continue
+        print(j)
         if send_code(mail, token, proxies, user_agent) == "proxies":
             i = 2
             continue
