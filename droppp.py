@@ -12,7 +12,7 @@ def get_mails():
     with open("mails.txt", "r") as file:
         for i in file.readlines():
             e, p = i.split(":")[0], i.split(":")[1]
-            mails[e] = p
+            mails[e] = p.replace("\n", "")
 
     return mails
 
@@ -24,7 +24,42 @@ def get_proxy():
     return proxies
 
 
-def create_account(mail, password, proxies, user_agent):
+def check(mail, user_agent, proxies):
+    headers = {
+        'authority': 'api.droppp.io',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'origin': 'https://droppp.io',
+        'referer': 'https://droppp.io/',
+        'user-agent': user_agent,
+    }
+
+    data = {
+        'email': mail,
+    }
+
+    response = requests.post('https://api.droppp.io/v1/user/email/check', headers=headers, data=data, proxies=proxies)
+    if "This website is using a security service" in response.text:
+        time.sleep(5)
+        response = requests.post('https://api.droppp.io/v1/user/email/check', headers=headers, data=data,
+                                 proxies=proxies)
+    elif "The owner of this website (api.droppp.io) has banned your IP address" in response.text:
+        return "remove"
+
+    response = response.json()
+    try:
+        is_registered = response["registered"]
+    except KeyError:
+        print(Fore.BLUE, f"[ERROR {mail}]", Fore.RED, response["errors"], proxies, Fore.RESET)
+        if response["errors"] == {'generic': 'Too many requests'}:
+            is_registered = "proxies"
+        else:
+            is_registered = "continue"
+    return is_registered
+
+
+def create_account(mail, password, user_agent, proxies):
     headers = {
         'authority': 'api.droppp.io',
         'accept': 'application/json, text/plain, */*',
@@ -37,36 +72,32 @@ def create_account(mail, password, proxies, user_agent):
 
     data = {
         'email': mail,
-        'password': password
+        'password': password,
     }
+
     response = requests.post('https://api.droppp.io/v1/user/add', headers=headers, data=data, proxies=proxies).json()
     try:
         token = response["token"]['access_token']
     except KeyError:
-        print(Fore.BLUE, f"[ERROR {mail}]", Fore.RED, response["errors"], Fore.RESET)
         if response["errors"] == {'generic': 'Too many requests'}:
             token = "proxies"
-        else:
-            token = "continue"
+
     return token
 
 
-def send_code(mail, token, proxies, user_agent):
+def send_code(mail, token, user_agent, proxies):
     headers = {
-        'user-agent': user_agent,
+        'authority': 'api.droppp.io',
         'accept': 'application/json, text/plain, */*',
         'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        'authorization': f'Bearer {token}',
+        # 'content-length': '0',
         'origin': 'https://droppp.io',
         'referer': 'https://droppp.io/',
-        'authority': 'api.droppp.io',
-        'authorization': f'Bearer {token}',
+        'user-agent': user_agent,
     }
 
     response = requests.post('https://api.droppp.io/v1/user/email/verify/send', headers=headers, proxies=proxies)
-    if "<!DOCTYPE html>" in response.text:
-        print(Fore.BLUE, "[INFO] Proxy is invalid", Fore.RESET)
-        return "proxies"
-
     print(Fore.BLUE, f"[{mail}]", Fore.GREEN, "Code sent:", response.text, Fore.RESET)
 
 
@@ -92,74 +123,86 @@ def get_code_from_rambler(login, password):
     return code
 
 
-def enter_code(code, token, proxies, user_agent, mail):
+def enter_code(code, token, user_agent, proxies, mail):
     headers = {
         'authority': 'api.droppp.io',
         'accept': 'application/json, text/plain, */*',
         'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
         'authorization': f'Bearer {token}',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
         'origin': 'https://droppp.io',
         'referer': 'https://droppp.io/',
-        'user-agent': user_agent
+        'user-agent': user_agent,
     }
 
     data = {
-        'code': code
+        'code': code,
     }
 
-    requests.post('https://api.droppp.io/v1/user/email/verify/set', headers=headers, data=data, proxies=proxies)
+    response = requests.post('https://api.droppp.io/v1/user/email/verify/set', headers=headers, data=data, proxies=proxies)
 
     print(Fore.BLUE, f"[{mail}]", Fore.GREEN, "Registration done", Fore.RESET)
+
+
+mails = get_mails()
+proxy = get_proxy()
 
 
 def main():
     print(Fore.BLUE, " Telegram:", Fore.GREEN, "@asiimov_near\n",
           Fore.BLUE, "Chat:", Fore.GREEN, "@AsiimovChat\n",
           Fore.BLUE, "Creator:", Fore.GREEN, "@rich_and_lonely")
-
-    mails = get_mails()
-    proxy = get_proxy()
     i = 0
-    j = 0
+
     for mail, password in mails.items():
-        user_agent = random_useragent()
-        if i == 2:
-            print(Fore.BLUE, "[INFO] Proxy changed", Fore.RESET)
-            j += 1
-            i = 0
         while True:
+            i += 1
             try:
-                proxies = {'http': 'http://' + proxy[j].replace("\n", ''), 'https': 'http://' + proxy[j].replace('\n', '')}
+                tmp = proxy[i].replace('\n', '')
+                proxies = {"http": f"http://{tmp}", "https": f"http://{tmp}"}
             except IndexError:
-                print(Fore.BLUE, "[INFO] More accounts than proxies", Fore.RESET)
-                print(Fore.BLUE, "[INFO] Registration is over", Fore.RESET)
-                print(Fore.BLUE, "[INFO] Last mail:", Fore.GREEN, mail, Fore.RESET)
-                time.sleep(60*60)
+                i = 0
+                tmp = proxy[i].replace('\n', '')
+                proxies = {"http": f"http://{tmp}", "https": f"http://{tmp}"}
+            user_agent = random_useragent()
+            is_registered = check(mail, user_agent, proxies)
+            if is_registered == True or is_registered == False:
                 break
-            try:
-                token = create_account(mail, password, proxies, user_agent)
-            except:
-                print(Fore.RED, "[ERROR] requests error", Fore.RESET)
-                token = "proxies"
-            if token == "continue":
-                break
-            elif token == "proxies":
-                j += 1
+            elif is_registered == "proxies":
+                i += 1
                 continue
-        if token == "continue":
+            elif is_registered == "continue":
+                break
+            elif is_registered == "remove":
+                print(Fore.BLUE, "[INFO] Broken proxy removed", Fore.RESET)
+                proxy.remove(proxy[i])
+                i += 1
+        if is_registered == "continue":
             continue
-        print(j)
-        if send_code(mail, token, proxies, user_agent) == "proxies":
-            i = 2
+        if not is_registered:
+            token = create_account(mail, password, user_agent, proxies)
+            if token == "proxies":
+                i += 1
+                continue
+        else:
+            print(Fore.BLUE, f"[{mail}]", Fore.GREEN, "Mail already registered", Fore.RESET)
             continue
+
+        send_code(mail, token, user_agent, proxies)
         time.sleep(10)
         try:
             code = get_code_from_rambler(mail, password)
         except:
             print(Fore.RED, "[ERROR] Something wrong with email", Fore.RESET)
-        enter_code(code, token, proxies, user_agent, mail)
-        time.sleep(10)
+        try:
+            enter_code(code, token, user_agent, proxies, mail)
+        except:
+            print(Fore.RED, "Missed code", Fore.RESET)
+        if not is_registered:
+            with open("registered accounts.txt", "a") as file:
+                file.write(f"{mail}:{password}:{token}\n")
         i += 1
+        time.sleep(10)
 
 
 if __name__ == "__main__":
