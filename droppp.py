@@ -149,9 +149,9 @@ proxy = get_proxy()
 
 
 def main():
-    print(Fore.BLUE, " Telegram:", Fore.GREEN, "@asiimov_near\n",
-          Fore.BLUE, "Chat:", Fore.GREEN, "@AsiimovChat\n",
-          Fore.BLUE, "Creator:", Fore.GREEN, "@rich_and_lonely")
+    print(Fore.BLUE, " Telegram:", Fore.GREEN, "@FarmerFrog\n",
+          Fore.BLUE, "Chat:", Fore.GREEN, "@FarmerFrogChat\n",
+          Fore.BLUE, "Creator:", Fore.GREEN, "@deer_fern")
     i = 0
 
     for mail, password in mails.items():
